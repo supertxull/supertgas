@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#14232b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="SupertGas">
+<title>SupertGas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap">
+<style>
+/* Layout: una columna tipo app; ajustes arriba, ranking de gasolineras debajo, la mejor destacada */
+:root{
+  --bg:#eef2f3; --surface:#ffffff; --ink:#14232b; --muted:#5b6b72; --line:#d5dee1;
+  --accent:#e8a100; --accent-ink:#14232b; --good:#1f8a5b; --bad:#b84a3a;
+  --display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#0f1a1f; --surface:#17252c; --ink:#e6eef0; --muted:#93a5ac; --line:#293a42;
+  --accent:#f2b51d; --accent-ink:#0f1a1f; --good:#43c08a; --bad:#e2735f; color-scheme:dark;}}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.45 var(--body);
+  padding:env(safe-area-inset-top,0) max(16px,env(safe-area-inset-right,0px)) calc(24px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));}
+.wrap{max-width:640px;margin:0 auto;display:flex;flex-direction:column;gap:16px;padding-top:16px}
+header{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+h1{font:700 2rem/1 var(--display);letter-spacing:.01em;margin:0;text-transform:uppercase}
+h1 span{color:var(--accent)}
+.stamp{font-size:.8rem;color:var(--muted);text-align:right}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:14px}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+label{display:flex;flex-direction:column;gap:4px;font-size:.78rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+input,select{font:500 1rem var(--body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;width:100%;min-width:0}
+input:focus,select:focus,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.full{grid-column:1/-1}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+button{font:600 1rem var(--body);border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:11px 14px;cursor:pointer}
+button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);flex:1}
+button:disabled{opacity:.5;cursor:default}
+.toggle{display:flex;align-items:center;gap:8px;font-size:.9rem;text-transform:none;letter-spacing:0;color:var(--ink);font-weight:500;flex-direction:row}
+.toggle input{width:auto}
+.status{font-size:.9rem;color:var(--muted)}
+.status.err{color:var(--bad)}
+.loc{font-size:.9rem}
+.suggest{list-style:none;margin:4px 0 0;padding:0;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.suggest li button{width:100%;text-align:left;border:0;border-radius:0;border-bottom:1px solid var(--line);font-weight:500}
+.suggest li:last-child button{border-bottom:0}
+.best{background:var(--ink);color:var(--bg);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:8px}
+.best .eyebrow{font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);font-weight:600}
+.best h2{font:700 1.7rem/1.05 var(--display);margin:0;text-transform:uppercase;text-wrap:balance}
+.best .addr{font-size:.9rem;opacity:.8}
+.figs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:4px}
+.fig b{display:block;font:700 1.5rem/1 var(--display);font-variant-numeric:tabular-nums}
+.fig small{font-size:.72rem;opacity:.75;text-transform:uppercase;letter-spacing:.06em}
+.best a{color:var(--accent-ink);background:var(--accent);text-decoration:none;font-weight:600;border-radius:10px;padding:10px 14px;text-align:center;margin-top:6px}
+.list{display:flex;flex-direction:column;gap:8px}
+.item{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:4px 10px;align-items:start}
+.rank{font:700 1.2rem/1.2 var(--display);color:var(--muted)}
+.name{font-weight:600;overflow-wrap:anywhere}
+.meta{font-size:.82rem;color:var(--muted);overflow-wrap:anywhere}
+.right{text-align:right;font-variant-numeric:tabular-nums}
+.price{font:700 1.35rem/1 var(--display)}
+.delta{font-size:.82rem;font-weight:600}
+.delta.up{color:var(--bad)} .delta.zero{color:var(--good)}
+.item a{grid-column:2/-1;font-size:.85rem;color:var(--ink);font-weight:600}
+.chip{display:inline-block;font-size:.7rem;font-weight:600;padding:1px 6px;border-radius:6px;background:var(--bg);border:1px solid var(--line);margin-left:4px;vertical-align:1px}
+.note{font-size:.8rem;color:var(--muted)}
+@media (max-width:380px){.grid{grid-template-columns:1fr}.figs{grid-template-columns:1fr 1fr}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Supert<span>Gas</span></h1>
+    <div class="stamp" id="stamp">Precios oficiales del Ministerio</div>
+  </header>
+
+  <section class="panel" aria-label="Ajustes">
+    <div class="grid">
+      <label class="full">Carburante
+        <select id="fuel"></select>
+      </label>
+      <label>Consumo (L/100 km)
+        <input id="cons" type="number" inputmode="decimal" step="0.1" min="1" value="6.5">
+      </label>
+      <label>Litros a repostar
+        <input id="litres" type="number" inputmode="decimal" step="1" min="1" value="40">
+      </label>
+      <label>Radio de búsqueda (km)
+        <input id="radius" type="number" inputmode="numeric" step="1" min="1" max="100" value="15">
+      </label>
+      <label>Desvío por carretera
+        <select id="road">
+          <option value="1.2">Ciudad/autovía (×1,2)</option>
+          <option value="1.35" selected>Mixto (×1,35)</option>
+          <option value="1.5">Montaña/rural (×1,5)</option>
+        </select>
+      </label>
+      <label class="toggle full"><input id="roundtrip" type="checkbox" checked> Contar ida y vuelta (desactívalo si la gasolinera te pilla de camino)</label>
+      <label class="toggle full"><input id="open24" type="checkbox"> Solo gasolineras 24 h</label>
+    </div>
+    <div class="row">
+      <button class="primary" id="gps">Usar mi ubicación</button>
+    </div>
+    <label>O busca una localidad
+      <input id="town" type="search" placeholder="Ej.: Getafe, Vigo, Ronda…" autocomplete="off">
+    </label>
+    <ul class="suggest" id="suggest" hidden></ul>
+    <div class="loc" id="loc" hidden></div>
+    <div class="status" id="status">Cargando precios…</div>
+  </section>
+
+  <section id="bestBox" hidden></section>
+  <section class="list" id="list" aria-label="Ranking"></section>
+
+  <p class="note">El coste total suma lo que pagas en el surtidor más el combustible que gastas en ir (y volver) hasta la gasolinera, valorado a su precio. La distancia es en línea recta multiplicada por el factor de desvío, así que es una estimación. Datos: Geoportal de Gasolineras, Ministerio para la Transición Ecológica (se actualizan cada 30 minutos aprox.).</p>
+</div>
+
+<script>
+const API = "https://sedeaplicaciones.minetur.gob.es/ServiciosRESTCarburantes/PreciosCarburantes/EstacionesTerrestres/";
+const FUELS = [
+  ["Precio Gasoleo A","Diésel (Gasóleo A)"],
+  ["Precio Gasoleo Premium","Diésel Premium"],
+  ["Precio Gasolina 95 E5","Gasolina 95"],
+  ["Precio Gasolina 95 E10","Gasolina 95 E10"],
+  ["Precio Gasolina 95 E5 Premium","Gasolina 95 Premium"],
+  ["Precio Gasolina 98 E5","Gasolina 98"],
+  ["Precio Gasolina 98 E10","Gasolina 98 E10"],
+  ["Precio Gases licuados del petróleo","GLP / Autogás"],
+  ["Precio Gas Natural Comprimido","GNC (€/kg)"],
+  ["Precio Biodiesel","Biodiésel"],
+  ["Precio Hidrogeno","Hidrógeno (€/kg)"]
+];
+const $ = id => document.getElementById(id);
+let stations = [], towns = [], here = null;
+
+const store = {
+  get(k){try{return localStorage.getItem(k)}catch(e){return null}},
+  set(k,v){try{localStorage.setItem(k,v)}catch(e){}}
+};
+
+$("fuel").innerHTML = FUELS.map(([k,l])=>`<option value="${k}">${l}</option>`).join("");
+["fuel","cons","litres","radius","road"].forEach(id=>{const v=store.get("rl_"+id); if(v) $(id).value=v;});
+["roundtrip","open24"].forEach(id=>{const v=store.get("rl_"+id); if(v!==null) $(id).checked = v==="1";});
+["fuel","cons","litres","radius","road","roundtrip","open24"].forEach(id=>{
+  $(id).addEventListener("change",()=>{const el=$(id); store.set("rl_"+id, el.type==="checkbox"?(el.checked?"1":"0"):el.value); render();});
+});
+
+const num = s => { if(!s) return NaN; return parseFloat(String(s).replace(",",".")); };
+function km(a,b){const R=6371,r=Math.PI/180,dLa=(b.lat-a.lat)*r,dLo=(b.lon-a.lon)*r;
+  const h=Math.sin(dLa/2)**2+Math.cos(a.lat*r)*Math.cos(b.lat*r)*Math.sin(dLo/2)**2; return 2*R*Math.asin(Math.sqrt(h));}
+const eur = (v,d=2) => v.toLocaleString("es-ES",{minimumFractionDigits:d,maximumFractionDigits:d});
+const esc = s => String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const title = s => String(s||"").toLowerCase().replace(/(^|[\s\-\/(])(\p{L})/gu,(m,a,b)=>a+b.toUpperCase());
+
+function setStatus(t,err){const s=$("status"); s.textContent=t; s.classList.toggle("err",!!err);}
+
+async function getJSON(url){
+  const ctl = new AbortController(); const t=setTimeout(()=>ctl.abort(),45000);
+  try{ const r = await fetch(url,{signal:ctl.signal,headers:{Accept:"application/json"}}); if(!r.ok) throw new Error("HTTP "+r.status); return await r.json(); }
+  finally{ clearTimeout(t); }
+}
+
+async function load(){
+  setStatus("Descargando precios de todas las gasolineras de España…");
+  const keys = FUELS.map(f=>f[0]);
+  let data;
+  try{
+    // 1) Copia que GitHub actualiza cada 30 min (mismo sitio, sin bloqueos)
+    const c = await getJSON("data/precios.json?t=" + Math.floor(Date.now()/300000));
+    data = { Fecha:c.fecha };
+    stations = c.s.map(([id,name,addr,town,prov,hours,lat,lon,pr])=>{
+      const p={}; c.fuels.forEach((k,i)=>{ if(pr[i]>0) p[k]=pr[i]; });
+      return { id, name:title(name), addr:title(addr), town:title(town), prov:title(prov), hours, lat, lon, p };
+    });
+  }catch(e){
+    // 2) Último recurso: el Ministerio directamente
+    try{ data = await getJSON(API); }
+    catch(e2){ setStatus("No he podido descargar los precios. Comprueba tu conexión y vuelve a intentarlo.", true); return; }
+    stations = (data.ListaEESSPrecio||[]).map(s=>{
+      const p={}; keys.forEach(k=>{const v=num(s[k]); if(v>0) p[k]=v;});
+      return { id:s.IDEESS, name:title(s["Rótulo"]), addr:title(s["Dirección"]), town:title(s.Municipio), prov:title(s.Provincia),
+        hours:s.Horario||"", lat:num(s.Latitud), lon:num(s["Longitud (WGS84)"]), p };
+    });
+  }
+  stations = stations.filter(s=>isFinite(s.lat)&&isFinite(s.lon));
+  const m = new Map();
+  stations.forEach(s=>{const k=s.town+"|"+s.prov; const o=m.get(k)||{name:s.town,prov:s.prov,lat:0,lon:0,n:0}; o.lat+=s.lat;o.lon+=s.lon;o.n++; m.set(k,o);});
+  towns = [...m.values()].map(o=>({name:o.name,prov:o.prov,lat:o.lat/o.n,lon:o.lon/o.n,n:o.n}));
+  $("stamp").textContent = "Precios del " + (data.Fecha||"día") + " · " + stations.length.toLocaleString("es-ES") + " estaciones";
+  setStatus(here ? "" : "Pulsa «Usar mi ubicación» o busca una localidad.");
+  const saved = store.get("rl_here"); if(!here && saved){ try{ setHere(JSON.parse(saved)); }catch(e){} }
+  render();
+}
+
+function setHere(h){ here=h; store.set("rl_here",JSON.stringify(h)); $("loc").hidden=false;
+  $("loc").innerHTML = "📍 Calculando desde <b>"+esc(h.label)+"</b>"; render(); }
+
+$("gps").addEventListener("click",()=>{
+  if(!navigator.geolocation){ setStatus("Este navegador no permite obtener la ubicación. Busca una localidad.",true); return; }
+  setStatus("Obteniendo tu ubicación…"); $("gps").disabled=true;
+  navigator.geolocation.getCurrentPosition(pos=>{
+    $("gps").disabled=false; setStatus("");
+    setHere({lat:pos.coords.latitude,lon:pos.coords.longitude,label:"tu ubicación actual"});
+  },err=>{
+    $("gps").disabled=false;
+    setStatus(err.code===1 ? "Has denegado el permiso de ubicación. Actívalo en los ajustes del navegador o busca una localidad." : "No se ha podido obtener la ubicación. Busca una localidad.", true);
+  },{enableHighAccuracy:true,timeout:15000,maximumAge:60000});
+});
+
+const norm = s => s.normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase();
+$("town").addEventListener("input",()=>{
+  const q = norm($("town").value.trim()); const ul=$("suggest");
+  if(q.length<2 || !towns.length){ ul.hidden=true; return; }
+  const hits = towns.filter(t=>norm(t.name).includes(q)).sort((a,b)=>(norm(a.name).startsWith(q)?0:1)-(norm(b.name).startsWith(q)?0:1)||b.n-a.n).slice(0,6);
+  ul.innerHTML = hits.map((t,i)=>`<li><button type="button" data-i="${i}">${esc(t.name)} <span class="meta">· ${esc(t.prov)}</span></button></li>`).join("") || `<li><button type="button" disabled>Sin resultados</button></li>`;
+  ul.hidden=false;
+  ul.querySelectorAll("button[data-i]").forEach(b=>b.onclick=()=>{const t=hits[+b.dataset.i]; ul.hidden=true; $("town").value=t.name;
+    setHere({lat:t.lat,lon:t.lon,label:t.name+" ("+t.prov+")"});});
+});
+
+function render(){
+  const list=$("list"), best=$("bestBox");
+  if(!here || !stations.length){ list.innerHTML=""; best.hidden=true; return; }
+  const fuel=$("fuel").value, cons=num($("cons").value)||0, L=num($("litres").value)||0;
+  const R=num($("radius").value)||15, road=num($("road").value)||1.35, trips=$("roundtrip").checked?2:1, only24=$("open24").checked;
+  let rows = stations.filter(s=>s.p[fuel] && (!only24 || /24H/i.test(s.hours))).map(s=>{
+    const d = km(here,s)*road; const tripL = d*trips*cons/100; const price=s.p[fuel];
+    return {...s, d, price, tripL, total: price*(L+tripL)};
+  }).filter(r=>r.d<=R).sort((a,b)=>a.total-b.total);
+  if(!rows.length){ best.hidden=true; list.innerHTML=`<p class="status">No hay gasolineras con ese carburante en ${R} km. Amplía el radio.</p>`; return; }
+  const top=rows[0], nearest=rows.reduce((a,b)=>a.d<b.d?a:b);
+  const saving = nearest.total-top.total;
+  const nav = r => `https://www.google.com/maps/dir/?api=1&destination=${r.lat},${r.lon}`;
+  best.hidden=false;
+  best.className="best";
+  best.innerHTML = `<div class="eyebrow">La más ventajosa</div>
+    <h2>${esc(top.name||"Gasolinera")}</h2>
+    <div class="addr">${esc(top.addr)}, ${esc(top.town)} · ${esc(top.hours)}</div>
+    <div class="figs">
+      <div class="fig"><b>${eur(top.price,3)}</b><small>€/litro</small></div>
+      <div class="fig"><b>${eur(top.d,1)}</b><small>km aprox.</small></div>
+      <div class="fig"><b>${eur(top.total)}</b><small>€ total</small></div>
+    </div>
+    <div class="addr">${top===nearest ? "Además es la más cercana." : `Te ahorras ${eur(saving)} € frente a la más cercana (${esc(nearest.name)}, ${eur(nearest.d,1)} km), incluido el combustible del trayecto (${eur(top.tripL,2)} L).`}</div>
+    <a href="${nav(top)}" target="_blank" rel="noopener">Cómo llegar</a>`;
+  list.innerHTML = rows.slice(1,30).map((r,i)=>{
+    const diff=r.total-top.total;
+    return `<div class="item">
+      <div class="rank">${i+2}</div>
+      <div><div class="name">${esc(r.name||"Gasolinera")}${/24H/i.test(r.hours)?'<span class="chip">24 h</span>':""}${r===nearest?'<span class="chip">más cerca</span>':""}</div>
+        <div class="meta">${esc(r.addr)}, ${esc(r.town)} · ${eur(r.d,1)} km</div></div>
+      <div class="right"><div class="price">${eur(r.price,3)} €</div><div class="delta ${diff<0.005?"zero":"up"}">+${eur(diff)} €</div></div>
+      <a href="${nav(r)}" target="_blank" rel="noopener">Cómo llegar →</a>
+    </div>`;}).join("");
+  if(rows.length>30) list.insertAdjacentHTML("beforeend",`<p class="note">Mostrando 30 de ${rows.length} gasolineras.</p>`);
+}
+
+load();
+</script>
+</body>
+</html>
