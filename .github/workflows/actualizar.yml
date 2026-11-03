@@ -1,1 +1,75 @@
+name: Actualizar precios y publicar
 
+on:
+  schedule:
+    - cron: "7,37 * * * *"   # cada 30 minutos (hora UTC)
+    - cron: "0 4 * * 1"      # lunes: commit de mantenimiento para que GitHub no pause la tarea
+  workflow_dispatch:          # botón "Run workflow" para lanzarlo a mano
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - id: pages
+        uses: actions/configure-pages@v5
+
+      - name: Descargar precios del Ministerio
+        id: descarga
+        continue-on-error: true
+        run: |
+          URL="https://sedeaplicaciones.minetur.gob.es/ServiciosRESTCarburantes/PreciosCarburantes/EstacionesTerrestres/"
+          UA="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36"
+          for i in 1 2 3; do
+            # Si el certificado del servidor da problemas, se reintenta sin verificarlo (son datos públicos).
+            if curl -sSfL --compressed -m 120 -A "$UA" -H "Accept: application/json" "$URL" -o bruto.json \
+               || curl -sSfLk --compressed -m 120 -A "$UA" -H "Accept: application/json" "$URL" -o bruto.json; then
+              mkdir -p site/data
+              node scripts/compactar.mjs bruto.json site/data/precios.json && exit 0
+            fi
+            echo "Intento $i fallido, reintentando en 30 s"; sleep 30
+          done
+          exit 1
+
+      - name: Si el Ministerio no responde, conservar los últimos datos publicados
+        if: steps.descarga.outcome != 'success'
+        run: |
+          mkdir -p site/data
+          curl -sSfL -m 60 "${{ steps.pages.outputs.base_url }}/data/precios.json" -o site/data/precios.json \
+            && echo "::warning::El Ministerio no respondió; se mantienen los datos anteriores." \
+            || { echo "::error::Sin datos nuevos ni anteriores."; exit 1; }
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - id: deploy
+        uses: actions/deploy-pages@v4
+
+      - name: Commit de mantenimiento semanal
+        if: github.event.schedule == '0 4 * * 1'
+        run: |
+          date -u +"%Y-%m-%dT%H:%M:%SZ" > ultima-revision.txt
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add ultima-revision.txt
+          git commit -m "Mantenimiento semanal" && git push || true
