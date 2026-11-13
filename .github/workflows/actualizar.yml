@@ -24,14 +24,14 @@ jobs:
       name: github-pages
       url: ${{ steps.deploy.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
-          node-version: 20
+          node-version: 24
 
       - id: pages
-        uses: actions/configure-pages@v5
+        uses: actions/configure-pages@v6
 
       - name: Descargar precios del Ministerio
         id: descarga
@@ -58,12 +58,12 @@ jobs:
             && echo "::warning::El Ministerio no respondió; se mantienen los datos anteriores." \
             || { echo "::error::Sin datos nuevos ni anteriores."; exit 1; }
 
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: site
 
       - id: deploy
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
 
       - name: Commit de mantenimiento semanal
         if: github.event.schedule == '0 4 * * 1'
